@@ -1,0 +1,18 @@
+{
+    "ngp": ["Regulation", "IT", "Sanctions", "Jour-fix", "EFET", "Spanish Framework Agreement"],
+    "ntr": ["EFET", "Service Agreement", "Credit Support"],
+    "nte": ["EFET", "EFET AA", "ISDA", "MSPA", "Regulation", "IT", "Service Agreement"],
+    "vst": ["Transaction", "Broker Agreement", "Sanctions"],
+    "klm": ["EFET", "EFET Training", "Credit Support"],
+    "dew": ["Jahresabschluss", "EFET", "MNA", "DRV", "Dienstleistungsvertrag", "Regulatorisches"],
+    "dxt": ["EFET", "DRV", "Credit Support"],
+    "eft": ["Website/IT", "Events/conferences", "Member/Socialising", "Orga", "LC Meeting and Workshop", "DENA PPA", "WG Agreement Maintenance", "WG Hydrogen", "WG Legal Opinions", "WG LNG + Nat Gas", "WG PPA + Certificates", "WG Biogas + Certificates", "WG Cross Committee", "WG Digitalisation"],
+    "evm": ["Jahresabschluss", "EFET", "Service Verträge"],
+    "ezp": ["Audit", "EFET", "MNA/CPTA", "Storage", "GOO", "Regulation", "market updates", "Employment law"],
+    "mti": ["Storage", "EFET", "Regulatory"],
+    "msi": ["DRV", "Credit Support", "EFET", "German law"],
+    "nga": ["Regulatory"],
+    "iqy": ["Jahresabschluss", "DMA", "EFET", "HKN", "Novation Agreements", "Sicherheiten"],
+    "pgn": ["DMA", "Direct Marketing", "Contracts"],
+    "spg": ["Jahresabschluss", "DMA", "EFET", "HKN", "Novation Agreements", "Sicherheiten", "Transaktionen"]
+}

@@ -1,0 +1,18 @@
+[
+    { "value": "ngp", "label": "NGP" }, 
+    { "value": "ntr", "label": "Nitro" },
+    { "value": "nte", "label": "NTE" },
+    { "value": "vst", "label": "VST" },
+    { "value": "klm", "label": "Kolmar" },
+    { "value": "dew", "label": "DEW21" },
+    { "value": "dxt", "label": "DXT" },
+    { "value": "eft", "label": "EFET" },
+    { "value": "evm", "label": "EVM" },
+    { "value": "ezp", "label": "Ezpada" },
+    { "value": "mti", "label": "METI" },
+    { "value": "msi", "label": "MITSUI" },
+    { "value": "nga", "label": "NGPA" },
+    { "value": "iqy", "label": "Iqony" },
+    { "value": "pgn", "label": "Priogen" },
+    { "value": "spg", "label": "SPG" }
+]

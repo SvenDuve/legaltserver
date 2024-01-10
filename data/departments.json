@@ -1,0 +1,18 @@
+{
+    "ngp": ["Finance", "Nat Gas", "LNG", "Risk", "Liquids"],
+    "ntr": ["Nitrogen", "Regulation", "Trading", "Trading Support"],
+    "nte": ["Nat Gas", "LNG"],
+    "vst": ["Regulatory", "Liquids", "Broker", "Shipping"],
+    "klm": ["Regulatory", "Nat Gas"],
+    "dew": ["Rechtsabteilung", "n.a."],
+    "dxt": ["Legal"],
+    "eft": ["EFET", "Legal Committee", "EFET Board", "EFET Deutschland Board"],
+    "evm": ["Rechtsabteilung"],
+    "ezp": ["Legal"],
+    "mti": ["Legal"],
+    "msi": ["Legal"],
+    "nga": ["Risk"],
+    "iqy": ["Rechtsabteilung", "Handel"],
+    "pgn": ["n.a."],
+    "spg": ["Rechtsabteilung", "Handel", "Rechtsabteilung/Broker"]
+}
