@@ -3,28 +3,20 @@ const sqlite3 = require('sqlite3').verbose();
 const app = express();
 const { Pool } = require('pg');
 
-// const db = new Pool({
-//     connectionString: process.env.DATABASE_URL,
-//     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-// });
-
-
 const db = new Pool({
-    user: '', // your PostgreSQL username, e.g., 'postgres'
-    host: 'localhost',
-    database: 'legaldb',
-    password: '', // leave empty if no password is set
-    port: 5432, // default PostgreSQL port
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 
-
-// if (process.env.NODE_ENV === 'production') {
-//     app.use(express.static(path.join(__dirname, '../client/build')));
-//     app.get('*', (req, res) => {
-//         res.sendFile(path.resolve(__dirname, '../client', 'build', 'index.html'));
-//     });
-// }
+// for local development
+// const db = new Pool({
+//     user: '', // your PostgreSQL username, e.g., 'postgres'
+//     host: 'localhost',
+//     database: 'legaldb',
+//     password: '', // leave empty if no password is set
+//     port: 5432, // default PostgreSQL port
+// });
 
 
 const cors = require('cors');
@@ -32,10 +24,6 @@ const corsOptions = {
     origin: '*',
 }
 app.use(cors(corsOptions));
-// const dbPath = 'data/legalttracker.sqlite';
-// const dbPath = new URL(process.env.DATABASE_URL).pathname;
-
-
 
 
 const fs = require('fs');
@@ -55,25 +43,8 @@ fs.readFile('data/clients.json', 'utf8', (err, data) => {
     });
 });
 
-console.log('Hello World Casper!');
+console.log('Hello World I am running..!');
 
-
-// const db = new sqlite3.Database(new URL(process.env.DATABASE_URL).pathname, (err) => {
-//     if (err) {
-//         console.error(err.message);
-//     } else {
-//         console.log('Connected to the SQLite database.');
-//         initDb(); // Call the function to initialize the database
-//     }
-// });
-// const db = new sqlite3.Database(dbPath, (err) => {
-//     if (err) {
-//         console.error(err.message);
-//     } else {
-//         console.log('Connected to the SQLite database.');
-//         initDb(); // Call the function to initialize the database
-//     }
-// });
 
 function addTimeEntry(pid, client, department, project, counterparty, description, start_time, end_time, callback) {
     const sql = `INSERT INTO time_entries (pid, client, department, project, counterparty, description, start_time, end_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id;`;
@@ -252,23 +223,6 @@ app.delete('/api/time-entries/:id', (req, res) => {
             res.status(400).json({ error: err.message });
         });
 });
-
-
-
-// app.get('/api/time-entries', (req, res) => {
-//     const sql = "SELECT * FROM time_entries";
-
-//     db.all(sql, [], (err, rows) => {
-//         if (err) {
-//             res.status(500).json({ error: err.message });
-//             return;
-//         }
-//         res.json({
-//             "success": true,
-//             "entries": rows
-//         });
-//     });
-// });
 
 
 app.get('/api/time-entries', (req, res) => {
