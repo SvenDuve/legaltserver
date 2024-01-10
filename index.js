@@ -1,6 +1,22 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const app = express();
+const { Pool } = require('pg');
+
+// const db = new Pool({
+//     connectionString: process.env.DATABASE_URL,
+//     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+// });
+
+
+const db = new Pool({
+    user: '', // your PostgreSQL username, e.g., 'postgres'
+    host: 'localhost',
+    database: 'legaldb',
+    password: '', // leave empty if no password is set
+    port: 5432, // default PostgreSQL port
+});
+
 
 
 // if (process.env.NODE_ENV === 'production') {
@@ -16,7 +32,7 @@ const corsOptions = {
     origin: '*',
 }
 app.use(cors(corsOptions));
-const dbPath = 'data/legalttracker.sqlite';
+// const dbPath = 'data/legalttracker.sqlite';
 // const dbPath = new URL(process.env.DATABASE_URL).pathname;
 
 
@@ -50,46 +66,52 @@ console.log('Hello World Casper!');
 //         initDb(); // Call the function to initialize the database
 //     }
 // });
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error(err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
-        initDb(); // Call the function to initialize the database
-    }
-});
+// const db = new sqlite3.Database(dbPath, (err) => {
+//     if (err) {
+//         console.error(err.message);
+//     } else {
+//         console.log('Connected to the SQLite database.');
+//         initDb(); // Call the function to initialize the database
+//     }
+// });
 
 function addTimeEntry(pid, client, department, project, counterparty, description, start_time, end_time, callback) {
-    const sql = `INSERT INTO time_entries (pid, client, department, project, counterparty, description, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`;
-    db.run(sql, [pid, client, department, project, counterparty, description, start_time, end_time], function(err) {
-        callback(err, { id: this.lastID });
+    const sql = `INSERT INTO time_entries (pid, client, department, project, counterparty, description, start_time, end_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id;`;
+    db.query(sql, [pid, client, department, project, counterparty, description, start_time, end_time])
+    .then(result => {
+        callback(null, { id: result.rows[0].id });
+    })
+    .catch(err => {
+        callback(err);
     });
 }
-
 
 
 
 function initDb() {
-    // Database table creation logic
-    // Example: Creating a 'clients' table
-    db.run(`CREATE TABLE IF NOT EXISTS time_entries (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        pid TEXT NOT NULL,
-        client TEXT NOT NULL,
-        department TEXT NOT NULL,
-        project TEXT NOT NULL,
-        counterparty TEXT,
-        description TEXT,
-        start_time DATETIME NOT NULL,
-        end_time DATETIME NOT NULL
-    );`, (err) => {
-        if (err) {
-            console.error(err.message);
-        } else {
+    const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS time_entries (
+            id SERIAL PRIMARY KEY,
+            pid TEXT NOT NULL,
+            client TEXT NOT NULL,
+            department TEXT NOT NULL,
+            project TEXT NOT NULL,
+            counterparty TEXT,
+            description TEXT,
+            start_time TIMESTAMP NOT NULL,
+            end_time TIMESTAMP NOT NULL
+        );
+    `;
+
+    db.query(createTableQuery)
+        .then(() => {
             console.log("Table 'time_entries' created or already exists.");
-        }
-    });
+        })
+        .catch(err => {
+            console.error(err.message);
+        });
 }
+
 
 
 initDb();
@@ -180,6 +202,7 @@ app.post('/api/add-entry', (req, res) => {
     });
 });
 
+
 app.put('/api/time-entries/:id', (req, res) => {
     console.log('Request body:', req.body); // Log the request body
     console.log('Request params:', req.params); 
@@ -187,47 +210,49 @@ app.put('/api/time-entries/:id', (req, res) => {
     const { pid, client, department, project, counterparty, description, start_time, end_time } = req.body;
 
     const sql = `UPDATE time_entries SET 
-                    pid = ?,
-                    client = ?, 
-                    department = ?, 
-                    project = ?, 
-                    counterparty = ?, 
-                    description = ?,
-                    start_time = ?, 
-                    end_time = ? 
-                 WHERE id = ?`;
+                    pid = $1,
+                    client = $2, 
+                    department = $3, 
+                    project = $4, 
+                    counterparty = $5, 
+                    description = $6,
+                    start_time = $7, 
+                    end_time = $8 
+                 WHERE id = $9`;
 
-    db.run(sql, [pid, client, department, project, counterparty, description, start_time, end_time, id], function(err) {
-        if (err) {
+    db.query(sql, [pid, client, department, project, counterparty, description, start_time, end_time, id])
+        .then(result => {
+            if (result.rowCount === 0) {
+                res.status(404).json({ message: 'Entry not found' });
+            } else {
+                res.json({ message: 'Entry updated successfully', changes: result.rowCount });
+            }
+        })
+        .catch(err => {
             console.error(err);
             res.status(500).json({ error: err.message });
-            return;
-        }
-        if (this.changes === 0) {
-            res.status(404).json({ message: 'Entry not found' });
-        } else {
-            res.json({ message: 'Entry updated successfully', changes: this.changes });
-        }
-    });
+        });
 });
+
 
 
 app.delete('/api/time-entries/:id', (req, res) => {
     const { id } = req.params;
-    const sql = `DELETE FROM time_entries WHERE id = ?`;
+    const sql = `DELETE FROM time_entries WHERE id = $1`;
 
-    db.run(sql, id, function(err) {
-        if (err) {
+    db.query(sql, [id])
+        .then(result => {
+            if (result.rowCount === 0) {
+                res.status(404).json({ message: 'Entry not found' });
+            } else {
+                res.json({ message: 'Entry deleted successfully', changes: result.rowCount });
+            }
+        })
+        .catch(err => {
             res.status(400).json({ error: err.message });
-            return;
-        }
-        if (this.changes === 0) {
-            res.status(404).json({ message: 'Entry not found' });
-        } else {
-            res.json({ message: 'Entry deleted successfully', changes: this.changes });
-        }
-    });
+        });
 });
+
 
 
 // app.get('/api/time-entries', (req, res) => {
@@ -245,6 +270,7 @@ app.delete('/api/time-entries/:id', (req, res) => {
 //     });
 // });
 
+
 app.get('/api/time-entries', (req, res) => {
     const sql = `
         SELECT 
@@ -257,35 +283,30 @@ app.get('/api/time-entries', (req, res) => {
             description, 
             start_time, 
             end_time,
-            strftime('%H:%M', (julianday(end_time) - julianday(start_time)) * 86400.0, 'unixepoch') AS time_diff_hrs_mins,
-            ROUND((julianday(end_time) - julianday(start_time)) * 24.0, 2) AS time_diff_decimal
+            TO_CHAR(end_time - start_time, 'HH24:MI') AS time_diff_hrs_mins,
+            ROUND(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600.0, 2) AS time_diff_decimal
         FROM time_entries
         ORDER BY start_time DESC`;
 
-    db.all(sql, [], (err, rows) => {
-        if (err) {
+    db.query(sql)
+        .then(result => {
+            const rows = result.rows;
+            
+            // Map the client values to their labels
+            // Assuming clientsMap is defined and loaded elsewhere
+            rows.forEach(row => {
+                row.client = clientsMap[row.client] || row.client;
+            });
+
+            res.json({
+                "success": true,
+                "entries": rows
+            });
+        })
+        .catch(err => {
             res.status(500).json({ error: err.message });
-            return;
-        }
-        
-        // // Load the clients JSON file
-
-
-        // Map the client values to their labels
-        rows.forEach(row => {
-            row.client = clientsMap[row.client] || row.client;
         });
-
-        res.json({
-            "success": true,
-            "entries": rows
-        });
-                    
-    });
-
 });
-
-
 
 
 
