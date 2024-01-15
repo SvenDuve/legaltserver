@@ -3,17 +3,8 @@ const sqlite3 = require('sqlite3').verbose();
 const app = express();
 const { Pool } = require('pg');
 const moment = require('moment-timezone');
+const { Parser } = require('json2csv');
 
-
-// // Function to append timezone to connection string
-// function appendTimezone(connectionString, timezone) {
-//     return connectionString.includes('?') ? 
-//         `${connectionString}&timezone='${encodeURIComponent(timezone)}'` : 
-//         `${connectionString}?timezone='${encodeURIComponent(timezone)}'`;
-// }
-
-
-// const connectionStringWithTimezone = appendTimezone(process.env.DATABASE_URL, 'Europe/Berlin');
 
 const db = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -30,6 +21,8 @@ const db = new Pool({
 //     password: '', // leave empty if no password is set
 //     port: 5432, // default PostgreSQL port
 // });
+
+
 
 async function checkTimezone() {
     try {
@@ -50,6 +43,7 @@ app.use(cors(corsOptions));
 
 
 const fs = require('fs');
+const { format } = require('path');
 
 let clientsMap = {};
 
@@ -87,6 +81,16 @@ function addTimeEntry(pid, client, department, project, counterparty, descriptio
     });
 }
 
+
+// Function to convert data to CSV and adjust timezone
+function convertToCSV(data) {
+    // Convert data to CSV format and adjust timezone
+    const parser = new Parser();
+    const csv = parser.parse(data);
+    return csv;
+    // Use moment-timezone to convert times to 'Europe/Berlin'
+    // Return CSV formatted string
+}
 
 
 function initDb() {
@@ -298,6 +302,42 @@ app.get('/api/time-entries', (req, res) => {
         });
 });
 
+app.get('/download-csv', async (req, res) => {
+    const sql = `
+    SELECT 
+        id, 
+        pid, 
+        client, 
+        department, 
+        project, 
+        counterparty, 
+        description, 
+        start_time, 
+        end_time,
+        TO_CHAR(end_time - start_time, 'HH24:MI') AS time_diff_hrs_mins,
+        ROUND(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600.0, 2) AS time_diff_decimal
+    FROM time_entries
+    ORDER BY start_time DESC`;
+
+    db.query(sql)
+        .then(data => {
+            const formattedData = data.rows.map(row => ({
+                ...row,
+                start_time: moment(row.start_time).tz('Europe/Berlin').format('DD.MM.YYYY HH:mm:ss'),
+                end_time: moment(row.end_time).tz('Europe/Berlin').format('DD.MM.YYYY HH:mm:ss')
+            }));
+    
+            const csvData = convertToCSV(formattedData);
+            res.header('Content-Type', 'text/csv');
+            res.attachment('data.csv');
+            return res.send(csvData);
+        })
+        .catch(err => {
+            console.error(err);
+            res.status(500).json({ error: err.message });
+        });
+});
+  
 
 
 const PORT = process.env.PORT || 3000;
