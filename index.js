@@ -5,15 +5,15 @@ const { Pool } = require('pg');
 const moment = require('moment-timezone');
 
 
-// Function to append timezone to connection string
-function appendTimezone(connectionString, timezone) {
-    return connectionString.includes('?') ? 
-        `${connectionString}&timezone='${encodeURIComponent(timezone)}'` : 
-        `${connectionString}?timezone='${encodeURIComponent(timezone)}'`;
-}
+// // Function to append timezone to connection string
+// function appendTimezone(connectionString, timezone) {
+//     return connectionString.includes('?') ? 
+//         `${connectionString}&timezone='${encodeURIComponent(timezone)}'` : 
+//         `${connectionString}?timezone='${encodeURIComponent(timezone)}'`;
+// }
 
 
-const connectionStringWithTimezone = appendTimezone(process.env.DATABASE_URL, 'Europe/Berlin');
+// const connectionStringWithTimezone = appendTimezone(process.env.DATABASE_URL, 'Europe/Berlin');
 
 const db = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -22,7 +22,7 @@ const db = new Pool({
 
 
 
-// // for local development
+// for local development
 // const db = new Pool({
 //     user: '', // your PostgreSQL username, e.g., 'postgres'
 //     host: 'localhost',
@@ -31,6 +31,16 @@ const db = new Pool({
 //     port: 5432, // default PostgreSQL port
 // });
 
+async function checkTimezone() {
+    try {
+        const result = await db.query('SHOW timezone');
+        console.log('Current Timezone:', result.rows[0].TimeZone);
+    } catch (error) {
+        console.error('Error fetching timezone:', error);
+    }
+}
+
+checkTimezone();
 
 const cors = require('cors');
 const corsOptions = {
@@ -272,7 +282,6 @@ app.get('/api/time-entries', (req, res) => {
     db.query(sql)
         .then(result => {
             const rows = result.rows;
-            console.log(rows)
             // Map the client values to their labels
             // Assuming clientsMap is defined and loaded elsewhere
             rows.forEach(row => {
