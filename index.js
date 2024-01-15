@@ -2,6 +2,18 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const app = express();
 const { Pool } = require('pg');
+const moment = require('moment-timezone');
+
+
+// Function to append timezone to connection string
+function appendTimezone(connectionString, timezone) {
+    return connectionString.includes('?') ? 
+        `${connectionString}&timezone='${encodeURIComponent(timezone)}'` : 
+        `${connectionString}?timezone='${encodeURIComponent(timezone)}'`;
+}
+
+
+const connectionStringWithTimezone = appendTimezone(process.env.DATABASE_URL, 'Europe/Berlin');
 
 const db = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -9,7 +21,8 @@ const db = new Pool({
 });
 
 
-// for local development
+
+// // for local development
 // const db = new Pool({
 //     user: '', // your PostgreSQL username, e.g., 'postgres'
 //     host: 'localhost',
@@ -45,8 +58,15 @@ fs.readFile('data/clients.json', 'utf8', (err, data) => {
 
 console.log('Hello World I am running..!');
 
+function convertToUTC(localTimeString, timeZone) {
+    return moment.tz(localTimeString, timeZone).utc().format();
+}
 
 function addTimeEntry(pid, client, department, project, counterparty, description, start_time, end_time, callback) {
+
+    const timeZone = 'Europe/Berlin';
+    start_time = convertToUTC(start_time, timeZone);
+    end_time = convertToUTC(end_time, timeZone);
     const sql = `INSERT INTO time_entries (pid, client, department, project, counterparty, description, start_time, end_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id;`;
     db.query(sql, [pid, client, department, project, counterparty, description, start_time, end_time])
     .then(result => {
@@ -153,6 +173,13 @@ app.get('/api/counterparties', (req, res) => {
             return res.status(500).send('An error occurred')
         }
         let counterpartiesData = JSON.parse(data);
+        // Sort the data alphabetically by label
+        counterpartiesData.sort((a, b) => {
+            if (a.label.toLowerCase() < b.label.toLowerCase()) return -1;
+            if (a.label.toLowerCase() > b.label.toLowerCase()) return 1;
+            return 0;
+        });
+
         res.json(counterpartiesData);
     });
 });
@@ -245,7 +272,7 @@ app.get('/api/time-entries', (req, res) => {
     db.query(sql)
         .then(result => {
             const rows = result.rows;
-            
+            console.log(rows)
             // Map the client values to their labels
             // Assuming clientsMap is defined and loaded elsewhere
             rows.forEach(row => {
