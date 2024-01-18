@@ -1,44 +1,174 @@
 [
-    { "value": "n.a.", "label": "n.a." },
-    { "value": "act", "label": "act"},
-    { "value": "AEenergi", "label": "AEnergi" },
-    { "value": "Axpo", "label": "Axpo" },
-    { "value": "BP", "label": "BP" },
-    { "value": "EEM", "label": "EEM" },
-    { "value": "EnBW", "label": "EnBW" },
-    { "value": "LEAG", "label": "LEAG" },
-    { "value": "MET Deutschland", "label": "MET Deutschland" },
-    { "value": "OMV", "label": "OMV" },
-    { "value": "OMVP" , "label": "OMVP" },
-    { "value": "MVM" , "label": "MVM" },
-    { "value": "Alpiq" , "label": "Alpiq" },
-    { "value": "Gunvor" , "label": "Gunvor" },
-    { "value": "METI" , "label": "METI" },
-    { "value": "CEZ" , "label": "CEZ" },
-    { "value": "Glencore" , "label": "Glencore" },
-    { "value": "PST" , "label": "PST" },
-    { "value": "DEPA" , "label": "DEPA" },
-    { "value": "Imlitex" , "label": "Imlitex" },
-    { "value": "SachsenEnergie" , "label": "SachsenEnergie" },
-    { "value": "ENI" , "label": "ENI" },
-    { "value": "GEN-I" , "label": "GEN-I" },
-    { "value": "TFS" , "label": "TFS" },
-    { "value": "Marex" , "label": "Marex" },
-    { "value": "ICAP" , "label": "ICAP" },
-    { "value": "EDFT" , "label": "EDFT" },
-    { "value": "Morgan Stanley" , "label": "Morgan Stanley" },
-    { "value": "EPH" , "label": "EPH" },
-    { "value": "Sorgenia" , "label": "Sorgenia" },
-    { "value": "BKW" , "label": "BKW" },
-    { "value": "Statkraft" , "label": "Statkraft" },
-    { "value": "METSA", "label": "METSA"},
-    { "value": "RWEST", "label": "RWEST"},
-    { "value": "Vattenfall", "label": "Vattenfall"},
-    { "value": "VNG HV", "label": "VNG HV"},
-    { "value": "Shell", "label": "Shell"},
-    { "value": "Trafigura", "label": "Trafigura"},
-    { "value": "SEFE", "label": "SEFE"},
-    { "value": "Vitol", "label": "Vitol"},
-    { "value": "STX", "label": "STX"},
-    { "value": "UGC", "label": "UGC"}
+    {
+        "value": "AEenergi",
+        "label": "AEnergi"
+    },
+    {
+        "value": "act",
+        "label": "act"
+    },
+    {
+        "value": "Alpiq",
+        "label": "Alpiq"
+    },
+    {
+        "value": "Axpo",
+        "label": "Axpo"
+    },
+    {
+        "value": "BKW",
+        "label": "BKW"
+    },
+    {
+        "value": "BP",
+        "label": "BP"
+    },
+    {
+        "value": "CEZ",
+        "label": "CEZ"
+    },
+    {
+        "value": "DEPA",
+        "label": "DEPA"
+    },
+    {
+        "value": "EDFT",
+        "label": "EDFT"
+    },
+    {
+        "value": "EEM",
+        "label": "EEM"
+    },
+    {
+        "value": "ENI",
+        "label": "ENI"
+    },
+    {
+        "value": "EPH",
+        "label": "EPH"
+    },
+    {
+        "value": "EnBW",
+        "label": "EnBW"
+    },
+    {
+        "value": "GEN-I",
+        "label": "GEN-I"
+    },
+    {
+        "value": "Glencore",
+        "label": "Glencore"
+    },
+    {
+        "value": "Gunvor",
+        "label": "Gunvor"
+    },
+    {
+        "value": "ICAP",
+        "label": "ICAP"
+    },
+    {
+        "value": "Imlitex",
+        "label": "Imlitex"
+    },
+    {
+        "value": "LEAG",
+        "label": "LEAG"
+    },
+    {
+        "value": "MET Deutschland",
+        "label": "MET Deutschland"
+    },
+    {
+        "value": "METI",
+        "label": "METI"
+    },
+    {
+        "value": "METSA",
+        "label": "METSA"
+    },
+    {
+        "value": "MVM",
+        "label": "MVM"
+    },
+    {
+        "value": "Marex",
+        "label": "Marex"
+    },
+    {
+        "value": "Morgan Stanley",
+        "label": "Morgan Stanley"
+    },
+    {
+        "value": "n.a.",
+        "label": "n.a."
+    },
+    {
+        "value": "OMV",
+        "label": "OMV"
+    },
+    {
+        "value": "OMVP",
+        "label": "OMVP"
+    },
+    {
+        "value": "PST",
+        "label": "PST"
+    },
+    {
+        "value": "RWEST",
+        "label": "RWEST"
+    },
+    {
+        "value": "SEFE",
+        "label": "SEFE"
+    },
+    {
+        "value": "STX",
+        "label": "STX"
+    },
+    {
+        "value": "SachsenEnergie",
+        "label": "SachsenEnergie"
+    },
+    {
+        "value": "Shell",
+        "label": "Shell"
+    },
+    {
+        "value": "Sorgenia",
+        "label": "Sorgenia"
+    },
+    {
+        "value": "Statkraft",
+        "label": "Statkraft"
+    },
+    {
+        "value": "TFS",
+        "label": "TFS"
+    },
+    {
+        "value": "THE",
+        "label": "THE"
+    },
+    {
+        "value": "Trafigura",
+        "label": "Trafigura"
+    },
+    {
+        "value": "UGC",
+        "label": "UGC"
+    },
+    {
+        "value": "VNG HV",
+        "label": "VNG HV"
+    },
+    {
+        "value": "Vattenfall",
+        "label": "Vattenfall"
+    },
+    {
+        "value": "Vitol",
+        "label": "Vitol"
+    }
 ]

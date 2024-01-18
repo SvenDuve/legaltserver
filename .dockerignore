@@ -88,3 +88,4 @@
 # DynamoDB Local files
 **/.dynamodb
 fly.toml
+sorter.py

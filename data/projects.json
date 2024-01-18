@@ -1,8 +1,8 @@
 {
     "ngp": ["Regulation", "IT", "Sanctions", "Jour-fix", "EFET", "Spanish Framework Agreement"],
     "ntr": ["EFET", "Service Agreement", "Credit Support"],
-    "nte": ["EFET", "EFET AA", "ISDA", "MSPA", "Regulation", "IT", "Service Agreement"],
-    "vst": ["Transaction", "Broker Agreement", "Sanctions"],
+    "nte": ["EFET", "EFET AA", "ISDA", "MSPA", "Regulation", "IT", "Service Agreement", "Storage"],
+    "vst": ["Transaction", "Broker Agreement", "Sanctions", "NDA"],
     "klm": ["EFET", "EFET Training", "Credit Support"],
     "dew": ["Jahresabschluss", "EFET", "MNA", "DRV", "Dienstleistungsvertrag", "Regulatorisches"],
     "dxt": ["EFET", "DRV", "Credit Support"],
@@ -12,7 +12,7 @@
     "mti": ["Storage", "EFET", "Regulatory"],
     "msi": ["DRV", "Credit Support", "EFET", "German law"],
     "nga": ["Regulatory"],
-    "iqy": ["Jahresabschluss", "DMA", "EFET", "HKN", "Novation Agreements", "Sicherheiten"],
+    "iqy": ["Jahresabschluss", "DMA", "EFET", "HKN", "Novation Agreements", "Sicherheiten", "DRV"],
     "pgn": ["DMA", "Direct Marketing", "Contracts"],
-    "spg": ["Jahresabschluss", "DMA", "EFET", "HKN", "Novation Agreements", "Sicherheiten", "Transaktionen"]
+    "spg": ["Jahresabschluss", "DMA", "EFET", "HKN", "Novation Agreements", "Sicherheiten", "Transaktionen", "DRV", "Brokerverträget"]
 }

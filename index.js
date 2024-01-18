@@ -6,21 +6,21 @@ const moment = require('moment-timezone');
 const { Parser } = require('json2csv');
 
 
-const db = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+// const db = new Pool({
+//     connectionString: process.env.DATABASE_URL,
+//     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+// });
 
 
 
 // for local development
-// const db = new Pool({
-//     user: '', // your PostgreSQL username, e.g., 'postgres'
-//     host: 'localhost',
-//     database: 'legaldb',
-//     password: '', // leave empty if no password is set
-//     port: 5432, // default PostgreSQL port
-// });
+const db = new Pool({
+    user: '', // your PostgreSQL username, e.g., 'postgres'
+    host: 'localhost',
+    database: 'legaldb',
+    password: '', // leave empty if no password is set
+    port: 5432, // default PostgreSQL port
+});
 
 
 
@@ -188,11 +188,11 @@ app.get('/api/counterparties', (req, res) => {
         }
         let counterpartiesData = JSON.parse(data);
         // Sort the data alphabetically by label
-        counterpartiesData.sort((a, b) => {
-            if (a.label.toLowerCase() < b.label.toLowerCase()) return -1;
-            if (a.label.toLowerCase() > b.label.toLowerCase()) return 1;
-            return 0;
-        });
+        // counterpartiesData.sort((a, b) => {
+        //     if (a.label.toLowerCase() < b.label.toLowerCase()) return -1;
+        //     if (a.label.toLowerCase() > b.label.toLowerCase()) return 1;
+        //     return 0;
+        // });
 
         res.json(counterpartiesData);
     });
@@ -324,7 +324,8 @@ app.get('/download-csv', async (req, res) => {
             const formattedData = data.rows.map(row => ({
                 ...row,
                 start_time: moment(row.start_time).tz('Europe/Berlin').format('DD.MM.YYYY HH:mm:ss'),
-                end_time: moment(row.end_time).tz('Europe/Berlin').format('DD.MM.YYYY HH:mm:ss')
+                end_time: moment(row.end_time).tz('Europe/Berlin').format('DD.MM.YYYY HH:mm:ss'),
+                client: clientsMap[row.client] // Apply counterpartyMap to row element counterparty
             }));
     
             const csvData = convertToCSV(formattedData);
