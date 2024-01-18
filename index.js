@@ -6,21 +6,21 @@ const moment = require('moment-timezone');
 const { Parser } = require('json2csv');
 
 
-// const db = new Pool({
-//     connectionString: process.env.DATABASE_URL,
-//     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-// });
+const db = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 
 
 // for local development
-const db = new Pool({
-    user: '', // your PostgreSQL username, e.g., 'postgres'
-    host: 'localhost',
-    database: 'legaldb',
-    password: '', // leave empty if no password is set
-    port: 5432, // default PostgreSQL port
-});
+// const db = new Pool({
+//     user: '', // your PostgreSQL username, e.g., 'postgres'
+//     host: 'localhost',
+//     database: 'legaldb',
+//     password: '', // leave empty if no password is set
+//     port: 5432, // default PostgreSQL port
+// });
 
 
 
