@@ -6,21 +6,21 @@ const moment = require('moment-timezone');
 const { Parser } = require('json2csv');
 
 
-const db = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+// const db = new Pool({
+//     connectionString: process.env.DATABASE_URL,
+//     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+// });
 
 
 
 // for local development
-// const db = new Pool({
-//     user: '', // your PostgreSQL username, e.g., 'postgres'
-//     host: 'localhost',
-//     database: 'legaldb',
-//     password: '', // leave empty if no password is set
-//     port: 5432, // default PostgreSQL port
-// });
+const db = new Pool({
+    user: '', // your PostgreSQL username, e.g., 'postgres'
+    host: 'localhost',
+    database: 'legaldb',
+    password: '', // leave empty if no password is set
+    port: 5432, // default PostgreSQL port
+});
 
 
 
@@ -338,6 +338,44 @@ app.get('/download-csv', async (req, res) => {
             res.status(500).json({ error: err.message });
         });
 });
+
+
+app.post('/api/clients/data', async (req, res) => {
+    const { startDate, endDate, client } = req.body;
+
+    // Convert startDate and endDate to the appropriate format if necessary
+    // ...
+
+    const sql = `
+        SELECT 
+        id, 
+        pid, 
+        client, 
+        department, 
+        project, 
+        counterparty, 
+        description, 
+        start_time, 
+        end_time,
+        TO_CHAR(end_time - start_time, 'HH24:MI') AS time_diff_hrs_mins,
+        ROUND(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600.0, 2) AS time_diff_decimal
+        FROM time_entries 
+        WHERE client = $1 
+        AND start_time >= $2 
+        AND end_time <= $3
+        ORDER BY start_time`;
+
+    try {
+        const result = await db.query(sql, [client, startDate, endDate]);
+        res.json({
+            success: true,
+            entries: result.rows
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
   
 
 
