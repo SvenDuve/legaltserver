@@ -365,17 +365,48 @@ app.post('/api/clients/data', async (req, res) => {
         AND end_time <= $3
         ORDER BY start_time`;
 
+    const sqlSumSeconds = `
+        SELECT
+        SUM(EXTRACT(EPOCH FROM (end_time - start_time))) AS total_time_diff_seconds
+        FROM time_entries 
+        WHERE client = $1 
+        AND start_time >= $2 
+        AND end_time <= $3`;
+
+    // const sqlSumDecimal = `
+    //     SELECT 
+    //     SUM(ROUND(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600.0, 2)) AS total_time_diff_decimal
+    //     FROM time_entries 
+    //     WHERE client = $1 
+    //     AND start_time >= $2 
+    //     AND end_time <= $3`;
+
     try {
         const result = await db.query(sql, [client, startDate, endDate]);
+        const entries = result.rows.map(row => ({
+            ...row,
+            client: clientsMap[row.client] // Convert client label to value using clientsMap
+        }));
+
+        const resultSumSeconds = await db.query(sqlSumSeconds, [client, startDate, endDate]);
+        const totalSeconds = resultSumSeconds.rows[0].total_time_diff_seconds;
+    
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const totalHrsMins = `${hours}:${minutes}`;
+
+        const totalDecimalHours = (totalSeconds / 3600).toFixed(2);
+
         res.json({
             success: true,
-            entries: result.rows
+            entries: entries,
+            totalHrsMins: totalHrsMins,
+            totalDecimalHours: totalDecimalHours
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
-
   
 
 
