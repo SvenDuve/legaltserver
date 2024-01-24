@@ -393,7 +393,7 @@ app.post('/api/clients/data', async (req, res) => {
     
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const totalHrsMins = `${hours}:${minutes}`;
+        const totalHrsMins = `${hours}:${minutes.toString().padStart(2, '0')}`;
 
         const totalDecimalHours = (totalSeconds / 3600).toFixed(2);
 

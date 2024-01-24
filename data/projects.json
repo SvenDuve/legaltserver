@@ -14,5 +14,6 @@
     "nga": ["Regulatory"],
     "iqy": ["Jahresabschluss", "DMA", "EFET", "HKN", "Novation Agreements", "Sicherheiten", "DRV"],
     "pgn": ["DMA", "Direct Marketing", "Contracts"],
-    "spg": ["Jahresabschluss", "DMA", "EFET", "HKN", "Novation Agreements", "Sicherheiten", "Transaktionen", "DRV", "Brokerverträget"]
+    "spg": ["Jahresabschluss", "DMA", "EFET", "HKN", "Novation Agreements", "Sicherheiten", "Transaktionen", "DRV", "Brokerverträget"],
+    "int": ["EFET Training", "Regulatory Training", "Contract Negotiation", "Risk Assessment"]
 }

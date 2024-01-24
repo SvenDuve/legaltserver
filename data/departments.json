@@ -14,5 +14,6 @@
     "nga": ["Risk"],
     "iqy": ["Rechtsabteilung", "Handel"],
     "pgn": ["n.a."],
-    "spg": ["Rechtsabteilung", "Handel", "Rechtsabteilung/Broker"]
+    "spg": ["Rechtsabteilung", "Handel", "Rechtsabteilung/Broker"],
+    "int": ["Fixpreis"]
 }

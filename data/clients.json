@@ -20,6 +20,10 @@
         "label": "Ezpada"
     },
     {
+        "value": "int",
+        "label": "Intern"
+    },
+    {
         "value": "iqy",
         "label": "Iqony"
     },
