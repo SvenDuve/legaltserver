@@ -89,3 +89,4 @@
 **/.dynamodb
 fly.toml
 sorter.py
+db_dump.csv

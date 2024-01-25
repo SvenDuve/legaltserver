@@ -6,21 +6,21 @@ const moment = require('moment-timezone');
 const { Parser } = require('json2csv');
 
 
-// const db = new Pool({
-//     connectionString: process.env.DATABASE_URL,
-//     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-// });
+const db = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 
 
 // for local development
-const db = new Pool({
-    user: '', // your PostgreSQL username, e.g., 'postgres'
-    host: 'localhost',
-    database: 'legaldb',
-    password: '', // leave empty if no password is set
-    port: 5432, // default PostgreSQL port
-});
+// const db = new Pool({
+//     user: '', // your PostgreSQL username, e.g., 'postgres'
+//     host: 'localhost',
+//     database: 'legaldb',
+//     password: '', // leave empty if no password is set
+//     port: 5432, // default PostgreSQL port
+// });
 
 
 
@@ -187,12 +187,6 @@ app.get('/api/counterparties', (req, res) => {
             return res.status(500).send('An error occurred')
         }
         let counterpartiesData = JSON.parse(data);
-        // Sort the data alphabetically by label
-        // counterpartiesData.sort((a, b) => {
-        //     if (a.label.toLowerCase() < b.label.toLowerCase()) return -1;
-        //     if (a.label.toLowerCase() > b.label.toLowerCase()) return 1;
-        //     return 0;
-        // });
 
         res.json(counterpartiesData);
     });
@@ -201,7 +195,7 @@ app.get('/api/counterparties', (req, res) => {
 
 app.post('/api/add-entry', (req, res) => {
     const { pid, client, department, project, counterparty, description, start_time, end_time } = req.body;
-    console.log('Request body:', req.body); // Log the request body
+    // console.log('Request body:', req.body); // Log the request body
     addTimeEntry(pid, client, department, project, counterparty, description, start_time, end_time, (err, result) => {
         if (err) {
             // Handle error (e.g., send a 500 Internal Server Error response)
@@ -216,8 +210,8 @@ app.post('/api/add-entry', (req, res) => {
 
 
 app.put('/api/time-entries/:id', (req, res) => {
-    console.log('Request body:', req.body); // Log the request body
-    console.log('Request params:', req.params); 
+    // console.log('Request body:', req.body); // Log the request body
+    // console.log('Request params:', req.params); 
     const { id } = req.params;
     const { pid, client, department, project, counterparty, description, start_time, end_time } = req.body;
 
@@ -373,13 +367,6 @@ app.post('/api/clients/data', async (req, res) => {
         AND start_time >= $2 
         AND end_time <= $3`;
 
-    // const sqlSumDecimal = `
-    //     SELECT 
-    //     SUM(ROUND(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600.0, 2)) AS total_time_diff_decimal
-    //     FROM time_entries 
-    //     WHERE client = $1 
-    //     AND start_time >= $2 
-    //     AND end_time <= $3`;
 
     try {
         const result = await db.query(sql, [client, startDate, endDate]);
@@ -406,6 +393,120 @@ app.post('/api/clients/data', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
+
+
+
+app.post('/api/clients/data/A', async (req, res) => {
+    const { startDate, endDate, client }  = req.body;
+
+    // Convert startDate and endDate to the appropriate format if necessary
+    // ...
+
+    let result = await db.query(`SELECT DISTINCT department FROM time_entries WHERE client = $1`, [client]);
+    const departments = result.rows.map(row => row.department);
+
+    console.log('Departments:', departments);    
+
+    const sql = `
+        SELECT 
+        id, 
+        pid, 
+        client, 
+        department, 
+        project, 
+        counterparty, 
+        description, 
+        start_time, 
+        end_time,
+        TO_CHAR(end_time - start_time, 'HH24:MI') AS time_diff_hrs_mins,
+        ROUND(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600.0, 2) AS time_diff_decimal
+        FROM time_entries 
+        WHERE client = $1
+        AND department = $2
+        AND start_time >= $3
+        AND end_time <= $4
+        ORDER BY start_time`;
+
+    const sqlSumSeconds = `
+        SELECT
+        SUM(EXTRACT(EPOCH FROM (end_time - start_time))) AS total_time_diff_seconds
+        FROM time_entries 
+        WHERE client = $1 
+        AND department = $2
+        AND start_time >= $3 
+        AND end_time <= $4`;
+
+    const totalSumSeconds = `
+        SELECT
+        SUM(EXTRACT(EPOCH FROM (end_time - start_time))) AS total_time_diff_seconds
+        FROM time_entries 
+        WHERE client = $1 
+        AND start_time >= $2 
+        AND end_time <= $3`;
+
+
+    // Create an empty array to store the entries
+    let allEntries = [];
+    let allDeptEntriesHrsMins = [];
+    let allDeptDecimalEntriesHrsMins = [];
+    let errorOccurred = null;
+
+
+    // ...
+
+    for (const department of departments) {
+        try {
+            const result = await db.query(sql, [client, department, startDate, endDate]);
+            const entries = result.rows.map(row => ({
+                ...row,
+                client: clientsMap[row.client] // Convert client label to value using clientsMap
+            }));
+            allEntries = allEntries.concat([entries]);
+
+
+            const resultSumSeconds = await db.query(sqlSumSeconds, [client, department, startDate, endDate]);
+            const totalSeconds = resultSumSeconds.rows[0].total_time_diff_seconds;
+    
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const totalHrsMins = `${hours}:${minutes.toString().padStart(2, '0')}`;
+
+            const totalDecimalHours = (totalSeconds / 3600).toFixed(2);
+
+            allDeptEntriesHrsMins = allDeptEntriesHrsMins.concat([totalHrsMins]);
+            allDeptDecimalEntriesHrsMins = allDeptDecimalEntriesHrsMins.concat([totalDecimalHours]);
+
+            // ...
+        } catch (err) {
+            errorOccurred = err
+            break;
+        }
+    }
+
+    const resultSumSeconds = await db.query(totalSumSeconds, [client, startDate, endDate]);
+    const totalSeconds = resultSumSeconds.rows[0].total_time_diff_seconds;
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const totalHrsMins = `${hours}:${minutes.toString().padStart(2, '0')}`;
+
+    const totalDecimalHours = (totalSeconds / 3600).toFixed(2);
+
+    if (errorOccurred) {
+        res.status(500).json({ error: errorOccurred.message });
+    } else {
+        res.json({
+            success: true,
+            entries: allEntries,
+            deptHrsMins: allDeptEntriesHrsMins,
+            deptDecHrsMins: allDeptDecimalEntriesHrsMins,
+            totalHrsMins: totalHrsMins,
+            totalDecHrsMins: totalDecimalHours
+        });
+
+    }
+
 });
   
 
