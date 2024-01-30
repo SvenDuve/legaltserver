@@ -6,21 +6,21 @@ const moment = require('moment-timezone');
 const { Parser } = require('json2csv');
 
 
-const db = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+// const db = new Pool({
+//     connectionString: process.env.DATABASE_URL,
+//     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+// });
 
 
 
 // for local development
-// const db = new Pool({
-//     user: '', // your PostgreSQL username, e.g., 'postgres'
-//     host: 'localhost',
-//     database: 'legaldb',
-//     password: '', // leave empty if no password is set
-//     port: 5432, // default PostgreSQL port
-// });
+const db = new Pool({
+    user: '', // your PostgreSQL username, e.g., 'postgres'
+    host: 'localhost',
+    database: 'legaldb',
+    password: '', // leave empty if no password is set
+    port: 5432, // default PostgreSQL port
+});
 
 
 
@@ -733,13 +733,14 @@ app.post('/api/clients/data/AnnexTable', async (req, res) => {
     let projectTimes = {};
     let errorOccurred = null;
     
-    for (const project of result.rows) {
+    for (const project of ['EFET', 'MSPA']) {
+        console.log(project)
         try {
-            const resultTimes = await db.query(sqlProjectTimes, [client, project.project, startDate, endDate]);
+            const resultTimes = await db.query(sqlProjectTimes, [client, project, startDate, endDate]);
             const times = resultTimes.rows.map(row => row);
             console.log(times)
             
-            projectTimes[project.project] = times.map(row => {
+            projectTimes[project] = times.map(row => {
                     const totalSeconds = row.total_time_diff;
                     const hours = Math.floor(totalSeconds / 3600);
                     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -768,6 +769,9 @@ app.post('/api/clients/data/AnnexTable', async (req, res) => {
     } else {
         res.json({
             success: true,
+            client: clientsMap[client],
+            startDate: startDate,
+            endDate: endDate,
             projectTimes: projectTimes,
             // deptProjectEntries: deptProjectEntries,
             // projHrsMins: allProjectEntriesHrsMins,
