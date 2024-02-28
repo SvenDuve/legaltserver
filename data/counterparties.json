@@ -28,6 +28,10 @@
         "label": "CEZ"
     },
     {
+        "value": "CountWestgass",
+        "label": "CountWestgass"
+    },
+    {
         "value": "DEPA",
         "label": "DEPA"
     },
@@ -84,6 +88,10 @@
         "label": "Gunvor"
     },
     {
+        "value": "GSI",
+        "label": "GSI"
+    },
+    {
         "value": "ICAP",
         "label": "ICAP"
     },
@@ -130,6 +138,10 @@
     {
         "value": "MVM",
         "label": "MVM"
+    },
+    {
+        "value": "MVM CEE",
+        "label": "MVM CEE"
     },
     {
         "value": "Marex",
