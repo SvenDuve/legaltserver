@@ -790,6 +790,119 @@ app.post('/api/clients/data/AnnexTable', async (req, res) => {
 });
   
 
+app.post('/api/clients/data/C', async (req, res) => {
+    const { startDate, endDate, client }  = req.body;
+
+    // Convert startDate and endDate to the appropriate format if necessary
+    // ...
+
+    let result = await db.query(`SELECT DISTINCT department FROM time_entries WHERE client = $1`, [client]);
+    const departments = result.rows.map(row => row.department);
+
+    console.log('Departments:', departments);    
+
+    const sql = `
+        SELECT 
+        id, 
+        pid, 
+        client, 
+        department, 
+        project, 
+        counterparty, 
+        description, 
+        start_time, 
+        end_time,
+        TO_CHAR(end_time - start_time, 'HH24:MI') AS time_diff_hrs_mins,
+        ROUND(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600.0, 2) AS time_diff_decimal
+        FROM time_entries 
+        WHERE client = $1
+        AND department = $2
+        AND start_time >= $3
+        AND end_time <= $4
+        ORDER BY start_time`;
+
+    const sqlSumSeconds = `
+        SELECT
+        SUM(EXTRACT(EPOCH FROM (end_time - start_time))) AS total_time_diff_seconds
+        FROM time_entries 
+        WHERE client = $1 
+        AND department = $2
+        AND start_time >= $3 
+        AND end_time <= $4`;
+
+    const totalSumSeconds = `
+        SELECT
+        SUM(EXTRACT(EPOCH FROM (end_time - start_time))) AS total_time_diff_seconds
+        FROM time_entries 
+        WHERE client = $1 
+        AND start_time >= $2 
+        AND end_time <= $3`;
+
+
+    // Create an empty array to store the entries
+    let allEntries = [];
+    let allDeptEntriesHrsMins = [];
+    let allDeptDecimalEntriesHrsMins = [];
+    let errorOccurred = null;
+
+
+    // ...
+
+    for (const department of departments) {
+        try {
+            const result = await db.query(sql, [client, department, startDate, endDate]);
+            const entries = result.rows.map(row => ({
+                ...row,
+                client: clientsMap[row.client] // Convert client label to value using clientsMap
+            }));
+            allEntries = allEntries.concat([entries]);
+
+
+            const resultSumSeconds = await db.query(sqlSumSeconds, [client, department, startDate, endDate]);
+            const totalSeconds = resultSumSeconds.rows[0].total_time_diff_seconds;
+    
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const totalHrsMins = `${hours}:${minutes.toString().padStart(2, '0')}`;
+
+            const totalDecimalHours = (totalSeconds / 3600).toFixed(2);
+
+            allDeptEntriesHrsMins = allDeptEntriesHrsMins.concat([totalHrsMins]);
+            allDeptDecimalEntriesHrsMins = allDeptDecimalEntriesHrsMins.concat([totalDecimalHours]);
+
+            // ...
+        } catch (err) {
+            errorOccurred = err
+            break;
+        }
+    }
+
+    const resultSumSeconds = await db.query(totalSumSeconds, [client, startDate, endDate]);
+    const totalSeconds = resultSumSeconds.rows[0].total_time_diff_seconds;
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const totalHrsMins = `${hours}:${minutes.toString().padStart(2, '0')}`;
+
+    const totalDecimalHours = (totalSeconds / 3600).toFixed(2);
+
+    if (errorOccurred) {
+        res.status(500).json({ error: errorOccurred.message });
+    } else {
+        res.json({
+            success: true,
+            entries: allEntries,
+            deptHrsMins: allDeptEntriesHrsMins,
+            deptDecHrsMins: allDeptDecimalEntriesHrsMins,
+            totalHrsMins: totalHrsMins,
+            totalDecHrsMins: totalDecimalHours,
+            client: clientsMap[client]
+        });
+
+    }
+
+});
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
