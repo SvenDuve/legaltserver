@@ -116,6 +116,14 @@
         "label": "LEAG"
     },
     {
+        "value": "Mark-E",
+        "label": "Mark-E"
+    },
+    {
+        "value": "MCT",
+        "label": "MCT"
+    },
+    {
         "value": "MET Deutschland",
         "label": "MET Deutschland"
     },
@@ -230,6 +238,10 @@
     {
         "value": "UGC",
         "label": "UGC"
+    },
+    {
+        "value": "Ukrnafta",
+        "label": "Ukrnafta"
     },
     {
         "value": "VNG HV",

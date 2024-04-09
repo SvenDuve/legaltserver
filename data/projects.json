@@ -1,7 +1,8 @@
 {
     "ngp": ["Regulation", "IT", "Sanctions", "Jour-fix", "EFET", "Spanish Framework Agreement"],
     "ntr": ["EFET", "Service Agreement", "Credit Support"],
-    "nte": ["EFET", "EFET AA", "ISDA", "MSPA", "Regulation", "IT", "Service Agreement", "Storage", "NDA"],
+    "nte": ["EFET", "EFET AA", "ISDA", "MSPA", "Regulation", "IT", "Service Agreement", "Storage", "NDA", "Transaction"],
+    "dtk": ["EFET", "EFET AA", "ISDA", "MSPA", "Regulation", "IT", "Service Agreement", "Storage", "NDA", "Transaction"],
     "vst": ["Transaction", "Broker Agreement", "Sanctions", "NDA"],
     "klm": ["EFET", "EFET Training", "Credit Support"],
     "dew": ["Jahresabschluss", "EFET", "MNA", "DRV", "Dienstleistungsvertrag", "Regulatorisches"],
