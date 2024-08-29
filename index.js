@@ -11,21 +11,21 @@ const jwt = require('jsonwebtoken');
 const app = express();
 
 
-// const db = new Pool({
-//     connectionString: process.env.DATABASE_URL,
-//     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-// });
+const db = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 
 
 // for local development
-const db = new Pool({
-    user: '', // your PostgreSQL username, e.g., 'postgres'
-    host: 'localhost',
-    database: 'legaldb',
-    password: '', // leave empty if no password is set
-    port: 5432, // default PostgreSQL port
-});
+// const db = new Pool({
+//     user: '', // your PostgreSQL username, e.g., 'postgres'
+//     host: 'localhost',
+//     database: 'legaldb',
+//     password: '', // leave empty if no password is set
+//     port: 5432, // default PostgreSQL port
+// });
 
 
 
@@ -181,7 +181,7 @@ async function createAdminUser() {
 initDb();
 
 app.use(express.json()); // for parsing application/json
-console.log(process.env.JWT_SECRET);
+
 
 
 // Middleware to authenticate JWT token
