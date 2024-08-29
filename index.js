@@ -1,26 +1,32 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
-const app = express();
 const { Pool } = require('pg');
 const moment = require('moment-timezone');
 const { Parser } = require('json2csv');
+const bcrypt = require('bcrypt');
+require('dotenv').config(); // Load environment variables from .env file
 
 
-const db = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+const jwt = require('jsonwebtoken');
+const app = express();
+
+
+// const db = new Pool({
+//     connectionString: process.env.DATABASE_URL,
+//     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+// });
 
 
 
 // for local development
-// const db = new Pool({
-//     user: '', // your PostgreSQL username, e.g., 'postgres'
-//     host: 'localhost',
-//     database: 'legaldb',
-//     password: '', // leave empty if no password is set
-//     port: 5432, // default PostgreSQL port
-// });
+const db = new Pool({
+    user: '', // your PostgreSQL username, e.g., 'postgres'
+    host: 'localhost',
+    database: 'legaldb',
+    password: '', // leave empty if no password is set
+    port: 5432, // default PostgreSQL port
+});
+
 
 
 
@@ -93,7 +99,7 @@ function convertToCSV(data) {
 }
 
 
-function initDb() {
+async function initDb() {
     const createTableQuery = `
         CREATE TABLE IF NOT EXISTS time_entries (
             id SERIAL PRIMARY KEY,
@@ -108,20 +114,197 @@ function initDb() {
         );
     `;
 
-    db.query(createTableQuery)
+    const createUsersTableQuery = `
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            is_admin BOOLEAN DEFAULT FALSE
+        );
+    `;
+
+    await db.query(createTableQuery)
         .then(() => {
             console.log("Table 'time_entries' created or already exists.");
         })
         .catch(err => {
             console.error(err.message);
         });
+
+    // Create the 'users' table
+    await db.query(createUsersTableQuery)
+        .then(() => {
+            console.log("Table 'users' created or already exists.");
+        })
+        .catch(err => {
+            console.error(err.message);
+        });
+
+    // Insert the admin user if not already exists
+    await createAdminUser();
+
 }
 
+
+async function createAdminUser() {
+    const username = 'admin'; // Replace with your admin username
+    const password = 'adminpassword'; // Replace with your admin password
+    const is_admin = true;
+
+    // Check if admin already exists
+    const checkAdminQuery = `SELECT * FROM users WHERE username = $1`;
+    const checkAdminResult = await db.query(checkAdminQuery, [username]);
+
+    if (checkAdminResult.rows.length > 0) {
+        console.log('Admin user already exists.');
+        return;
+    }
+
+    // Hash the admin password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert the admin user into the database
+    const insertAdminQuery = `
+        INSERT INTO users (username, password, is_admin) VALUES ($1, $2, $3)
+    `;
+    
+    await db.query(insertAdminQuery, [username, hashedPassword, is_admin])
+        .then(() => {
+            console.log("Admin user created successfully.");
+        })
+        .catch(err => {
+            console.error('Error creating admin user:', err.message);
+        });
+}
 
 
 initDb();
 
 app.use(express.json()); // for parsing application/json
+console.log(process.env.JWT_SECRET);
+
+
+// Middleware to authenticate JWT token
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    console.log('Authorization Header:', authHeader);
+    const token = authHeader && authHeader.split(' ')[1];
+    console.log('Token:', token);
+
+    if (!token) {
+        console.log('No token provided');
+        return res.sendStatus(401);
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) {
+            console.log('Token verification failed:', err.message);
+            return res.sendStatus(403);
+        }
+
+        req.user = user;
+        console.log('Token verified, user:', user);
+        next();
+    });
+}
+
+// Middleware to check if user is an admin
+async function authenticateAdmin(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.sendStatus(401);
+
+    jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
+        if (err) return res.sendStatus(403);
+
+        try {
+            const result = await db.query('SELECT is_admin FROM users WHERE id = $1', [user.id]);
+            const isAdmin = result.rows[0].is_admin;
+
+            if (isAdmin) {
+                req.user = user;
+                next();
+            } else {
+                res.sendStatus(403);
+            }
+        } catch (error) {
+            console.error(error);
+            res.sendStatus(500);
+        }
+    });
+}
+
+
+
+// Admin-only route to create new users
+app.post('/admin/create-user', authenticateAdmin, async (req, res) => {
+    const { username, password, isAdmin } = req.body;
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        console.log(hashedPassword)
+        const result = await db.query(
+            'INSERT INTO users (username, password, is_admin) VALUES ($1, $2, $3) RETURNING id',
+            [username, hashedPassword, isAdmin || false]
+        );
+
+        res.status(201).json({ message: 'User created successfully', userId: result.rows[0].id });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to create user' });
+    }
+});
+
+// Function to generate JWT token
+function generateToken(user) {
+    const payload = {
+        id: user.id,
+        username: user.username,
+        isAdmin: user.is_admin // Add isAdmin based on the user's role
+    };
+
+    // Generate the token with a secret key and expiration time
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+}
+
+// Function to fetch a user from the database by username
+async function getUserFromDatabase(username) {
+    const query = 'SELECT * FROM users WHERE username = $1';
+    try {
+        const result = await db.query(query, [username]); // Query the database
+        return result.rows[0]; // Return the user object if found
+    } catch (error) {
+        console.error('Error fetching user from database:', error);
+        throw error; // Throw the error to handle it in the route
+    }
+}
+
+
+
+
+// Login route to authenticate users
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        
+        const user = await getUserFromDatabase(username); // Fetch the user from the database
+
+        if (user && await bcrypt.compare(password, user.password)) {
+            const token = generateToken(user); // Generate a JWT token
+            res.json({ token });
+        } else {
+            res.status(401).json({ error: 'Invalid username or password' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to login user' });
+    }
+});
+
+
+
 
 
 
@@ -131,7 +314,7 @@ app.get('/', (req, res) => {
 
 });
 
-app.get('/api/clients', (req, res) => {
+app.get('/api/clients', authenticateToken, (req, res) => {
     // Fetch or compute the clients data
     // const fs = require('fs');
     fs.readFile('data/clients.json', 'utf8', (err, data) => {
@@ -144,7 +327,7 @@ app.get('/api/clients', (req, res) => {
     });
 });
 
-app.get('/api/departments/:client', (req, res) => {
+app.get('/api/departments/:client', authenticateToken, (req, res) => {
     // Fetch or compute the clients data
     // const fs = require('fs');
     fs.readFile('data/departments.json', 'utf8', (err, data) => {
@@ -161,7 +344,7 @@ app.get('/api/departments/:client', (req, res) => {
     });
 });
 
-app.get('/api/projects/:client', (req, res) => {
+app.get('/api/projects/:client', authenticateToken, (req, res) => {
     // Fetch or compute the clients data
     // const fs = require('fs');
     fs.readFile('data/projects.json', 'utf8', (err, data) => {
@@ -178,7 +361,7 @@ app.get('/api/projects/:client', (req, res) => {
     });
 });
 
-app.get('/api/counterparties', (req, res) => {
+app.get('/api/counterparties', authenticateToken, (req, res) => {
     // Fetch or compute the clients data
     // const fs = require('fs');
     fs.readFile('data/counterparties.json', 'utf8', (err, data) => {
@@ -193,7 +376,7 @@ app.get('/api/counterparties', (req, res) => {
 });
 
 
-app.post('/api/add-entry', (req, res) => {
+app.post('/api/add-entry', authenticateToken, (req, res) => {
     const { pid, client, department, project, counterparty, description, start_time, end_time } = req.body;
     // console.log('Request body:', req.body); // Log the request body
     addTimeEntry(pid, client, department, project, counterparty, description, start_time, end_time, (err, result) => {
@@ -209,7 +392,7 @@ app.post('/api/add-entry', (req, res) => {
 });
 
 
-app.put('/api/time-entries/:id', (req, res) => {
+app.put('/api/time-entries/:id', authenticateToken, (req, res) => {
     // console.log('Request body:', req.body); // Log the request body
     // console.log('Request params:', req.params); 
     const { id } = req.params;
@@ -242,7 +425,7 @@ app.put('/api/time-entries/:id', (req, res) => {
 
 
 
-app.delete('/api/time-entries/:id', (req, res) => {
+app.delete('/api/time-entries/:id', authenticateToken, (req, res) => {
     const { id } = req.params;
     const sql = `DELETE FROM time_entries WHERE id = $1`;
 
@@ -260,7 +443,7 @@ app.delete('/api/time-entries/:id', (req, res) => {
 });
 
 
-app.get('/api/time-entries', (req, res) => {
+app.get('/api/time-entries', authenticateToken, (req, res) => {
     const sql = `
         SELECT 
             id, 
@@ -296,7 +479,7 @@ app.get('/api/time-entries', (req, res) => {
         });
 });
 
-app.get('/download-csv', async (req, res) => {
+app.get('/download-csv', authenticateToken, async (req, res) => {
     const sql = `
     SELECT 
         id, 
@@ -334,7 +517,7 @@ app.get('/download-csv', async (req, res) => {
 });
 
 
-app.post('/api/clients/data', async (req, res) => {
+app.post('/api/clients/data', authenticateToken, async (req, res) => {
     const { startDate, endDate, client } = req.body;
 
     // Convert startDate and endDate to the appropriate format if necessary
@@ -397,7 +580,7 @@ app.post('/api/clients/data', async (req, res) => {
 
 
 
-app.post('/api/clients/data/A', async (req, res) => {
+app.post('/api/clients/data/A', authenticateToken, async (req, res) => {
     const { startDate, endDate, client }  = req.body;
 
     // Convert startDate and endDate to the appropriate format if necessary
@@ -512,7 +695,7 @@ app.post('/api/clients/data/A', async (req, res) => {
   
 
 
-app.post('/api/clients/data/B', async (req, res) => {
+app.post('/api/clients/data/B', authenticateToken, async (req, res) => {
     const { startDate, endDate, client }  = req.body;
 
 
@@ -703,7 +886,7 @@ app.post('/api/clients/data/B', async (req, res) => {
 });
 
 
-app.post('/api/clients/data/AnnexTable', async (req, res) => {
+app.post('/api/clients/data/AnnexTable', authenticateToken, async (req, res) => {
     const { startDate, endDate, client }  = req.body;
 
 
@@ -790,7 +973,7 @@ app.post('/api/clients/data/AnnexTable', async (req, res) => {
 });
   
 
-app.post('/api/clients/data/C', async (req, res) => {
+app.post('/api/clients/data/C', authenticateToken, async (req, res) => {
     const { startDate, endDate, client }  = req.body;
 
     // Convert startDate and endDate to the appropriate format if necessary

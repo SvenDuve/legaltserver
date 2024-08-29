@@ -1,8 +1,9 @@
 {
     "ngp": ["Finance", "Nat Gas", "LNG", "Risk", "Liquids"],
     "ntr": ["Nitrogen", "Regulation", "Trading", "Trading Support"],
-    "nte": ["Nat Gas", "LNG", "General"],
+    "nte": ["Nat Gas", "LNG", "General", "Naftogaz SK"],
     "vst": ["Regulatory", "Liquids", "Broker", "Shipping"],
+    "exk": ["Rechtsabteilung"],
     "klm": ["Regulatory", "Nat Gas"],
     "dew": ["Rechtsabteilung", "n.a."],
     "dxt": ["Legal"],

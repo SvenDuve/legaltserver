@@ -89,3 +89,5 @@ typings/
 
 sorter.py
 db_dump.csv
+
+.env

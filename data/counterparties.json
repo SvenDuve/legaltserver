@@ -192,6 +192,10 @@
         "label": "Priogen"
     },
     {
+        "value": "RE Fuels",
+        "label": "RE Fuels"
+    },
+    {
         "value": "RWEST",
         "label": "RWEST"
     },
@@ -224,6 +228,10 @@
         "label": "Statkraft"
     },
     {
+        "value": "Tegos",
+        "label": "Tegos"
+    },
+    {
         "value": "TFS",
         "label": "TFS"
     },
@@ -254,6 +262,10 @@
     {
         "value": "Vattenfall",
         "label": "Vattenfall"
+    },
+    {
+        "value": "Venture",
+        "label": "Venture"
     },
     {
         "value": "Vitol",
