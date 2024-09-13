@@ -147,8 +147,8 @@ async function initDb() {
 
 
 async function createAdminUser() {
-    const username = 'admin'; // Replace with your admin username
-    const password = 'adminpassword'; // Replace with your admin password
+    const username = process.env.ADMIN; // Replace with your admin username
+    const password = process.env.ADMIN_PASSWORD; // Replace with your admin password
     const is_admin = true;
 
     // Check if admin already exists

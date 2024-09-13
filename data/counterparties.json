@@ -5,7 +5,7 @@
     },
     {
         "value": "AEenergi",
-        "label": "AEnergi"
+        "label": "AEenergi"
     },
     {
         "value": "Alpiq",
@@ -36,11 +36,11 @@
         "label": "DEPA"
     },
     {
-        "value": "dew",
+        "value": "DEW21",
         "label": "DEW21"
     },
     {
-        "value": "dxt",
+        "value": "DXT",
         "label": "DXT"
     },
     {
@@ -52,7 +52,7 @@
         "label": "EEM"
     },
     {
-        "value": "eft",
+        "value": "EFET",
         "label": "EFET"
     },
     {
@@ -64,7 +64,7 @@
         "label": "EPH"
     },
     {
-        "value": "evm",
+        "value": "EVM",
         "label": "EVM"
     },
     {
@@ -72,7 +72,7 @@
         "label": "EnBW"
     },
     {
-        "value": "ezp",
+        "value": "Ezpada",
         "label": "Ezpada"
     },
     {
@@ -100,15 +100,15 @@
         "label": "Imlitex"
     },
     {
-        "value": "int",
+        "value": "Intern",
         "label": "Intern"
     },
     {
-        "value": "iqy",
+        "value": "Iqony",
         "label": "Iqony"
     },
     {
-        "value": "klm",
+        "value": "Kolmar",
         "label": "Kolmar"
     },
     {
@@ -132,7 +132,7 @@
         "label": "METI"
     },
     {
-        "value": "mti",
+        "value": "METI",
         "label": "METI"
     },
     {
@@ -140,7 +140,7 @@
         "label": "METSA"
     },
     {
-        "value": "msi",
+        "value": "MITSUI",
         "label": "MITSUI"
     },
     {
@@ -160,19 +160,19 @@
         "label": "Morgan Stanley"
     },
     {
-        "value": "ngp",
+        "value": "NGP",
         "label": "NGP"
     },
     {
-        "value": "nga",
+        "value": "NGPA",
         "label": "NGPA"
     },
     {
-        "value": "nte",
+        "value": "NTE",
         "label": "NTE"
     },
     {
-        "value": "ntr",
+        "value": "Nitro",
         "label": "Nitro"
     },
     {
@@ -188,7 +188,7 @@
         "label": "PST"
     },
     {
-        "value": "pgn",
+        "value": "Priogen",
         "label": "Priogen"
     },
     {
@@ -204,7 +204,7 @@
         "label": "SEFE"
     },
     {
-        "value": "spg",
+        "value": "SPG",
         "label": "SPG"
     },
     {
@@ -256,7 +256,7 @@
         "label": "VNG HV"
     },
     {
-        "value": "vst",
+        "value": "VST",
         "label": "VST"
     },
     {
