@@ -1,20 +1,62 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
+
+
+const app = express();
+
+
 const { Pool } = require('pg');
 const moment = require('moment-timezone');
 const { Parser } = require('json2csv');
 const bcrypt = require('bcrypt');
-require('dotenv').config(); // Load environment variables from .env file
-
-
 const jwt = require('jsonwebtoken');
-const app = express();
+const dotenv = require('dotenv');
+const cors = require('cors');
+const fs = require('fs');
+const { format } = require('path');
 
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
 
-const db = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+dotenv.config();
+
+app.use(helmet());
+
+const corsOptions = {
+    origin: process.env.NODE_ENV === 'production' ? 'https://legaltclient.fly.dev' : '*',
+    optionsSuccessStatus: 200,
+    credentials: true, // Allow credentials if using cookies
+};
+
+app.use(cors(corsOptions));
+
+// Rate Limiting to prevent brute-force attacks
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again after 15 minutes',
 });
+app.use('/api/', apiLimiter);
+
+
+
+const db = new Pool(
+    process.env.NODE_ENV === 'production'
+        ? {
+            connectionString: process.env.DATABASE_URL,
+            ssl: { 
+                    rejectUnauthorized: false,
+            },
+        }
+        : {
+            user: process.env.DB_USER,
+            host: process.env.DB_HOST,
+            database: process.env.DB_DATABASE,
+            password: process.env.DB_PASSWORD,
+            port: process.env.DB_PORT,
+        }
+);
 
 
 
@@ -30,6 +72,99 @@ const db = new Pool({
 
 
 
+
+// Initialize Database Tables
+function initDb() {
+    const createTimeEntriesTable = `
+        CREATE TABLE IF NOT EXISTS time_entries (
+            id SERIAL PRIMARY KEY,
+            pid TEXT NOT NULL,
+            client TEXT NOT NULL,
+            department TEXT NOT NULL,
+            project TEXT NOT NULL,
+            counterparty TEXT,
+            description TEXT,
+            start_time TIMESTAMP NOT NULL,
+            end_time TIMESTAMP NOT NULL
+        );
+    `;
+
+    const createUsersTable = `
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            role VARCHAR(20) DEFAULT 'user'
+        );
+    `;
+
+    db.query(createTimeEntriesTable)
+        .then(() => console.log("Table 'time_entries' created or already exists."))
+        .catch(err => console.error('Error creating time_entries table:', err.message));
+
+    db.query(createUsersTable)
+        .then(() => console.log("Table 'users' created or already exists."))
+        .catch(err => console.error('Error creating users table:', err.message));
+}
+
+initDb();
+
+
+// Function to seed an initial admin user
+async function seedAdminUser() {
+    const adminUsername = process.env.ADMIN;
+    const adminPassword = process.env.ADMIN_PASSWORD; // Change this to a secure password
+
+    try {
+        // Check if admin user exists
+        const userResult = await db.query('SELECT * FROM users WHERE username = $1', [adminUsername]);
+        if (userResult.rows.length === 0) {
+            // Hash the password
+            const hashedPassword = await bcrypt.hash(adminPassword, 10);
+            // Insert admin user
+            await db.query(
+                'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
+                [adminUsername, hashedPassword, 'admin']
+            );
+            console.log('Admin user created with username:', adminUsername);
+        } else {
+            console.log('Admin user already exists.');
+        }
+    } catch (err) {
+        console.error('Error seeding admin user:', err.message);
+    }
+}
+
+seedAdminUser();
+
+
+
+// Middleware to authenticate JWT
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+    if (!token) return res.status(401).json({ message: 'Access Token Required' });
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ message: 'Invalid Access Token' });
+        req.user = user; // Attach user payload to request
+        next();
+    });
+}
+
+// Middleware to authorize admin users
+function authorizeAdmin(req, res, next) {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin privileges required' });
+    }
+    next();
+}
+
+
+
+
+
+
 async function checkTimezone() {
     try {
         const result = await db.query('SHOW timezone');
@@ -41,15 +176,9 @@ async function checkTimezone() {
 
 checkTimezone();
 
-const cors = require('cors');
-const corsOptions = {
-    origin: '*',
-}
-app.use(cors(corsOptions));
 
 
-const fs = require('fs');
-const { format } = require('path');
+
 
 let clientsMap = {};
 
@@ -66,7 +195,6 @@ fs.readFile('data/clients.json', 'utf8', (err, data) => {
     });
 });
 
-console.log('Hello World I am running..!');
 
 function convertToUTC(localTimeString, timeZone) {
     return moment.tz(localTimeString, timeZone).utc().format();
@@ -99,162 +227,60 @@ function convertToCSV(data) {
 }
 
 
-async function initDb() {
-    const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS time_entries (
-            id SERIAL PRIMARY KEY,
-            pid TEXT NOT NULL,
-            client TEXT NOT NULL,
-            department TEXT NOT NULL,
-            project TEXT NOT NULL,
-            counterparty TEXT,
-            description TEXT,
-            start_time TIMESTAMP NOT NULL,
-            end_time TIMESTAMP NOT NULL
-        );
-    `;
-
-    const createUsersTableQuery = `
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            is_admin BOOLEAN DEFAULT FALSE
-        );
-    `;
-
-    await db.query(createTableQuery)
-        .then(() => {
-            console.log("Table 'time_entries' created or already exists.");
-        })
-        .catch(err => {
-            console.error(err.message);
-        });
-
-    // Create the 'users' table
-    await db.query(createUsersTableQuery)
-        .then(() => {
-            console.log("Table 'users' created or already exists.");
-        })
-        .catch(err => {
-            console.error(err.message);
-        });
-
-    // Insert the admin user if not already exists
-    await createAdminUser();
-
-}
 
 
-async function createAdminUser() {
-    const username = process.env.ADMIN; // Replace with your admin username
-    const password = process.env.ADMIN_PASSWORD; // Replace with your admin password
-    const is_admin = true;
-
-    // Check if admin already exists
-    const checkAdminQuery = `SELECT * FROM users WHERE username = $1`;
-    const checkAdminResult = await db.query(checkAdminQuery, [username]);
-
-    if (checkAdminResult.rows.length > 0) {
-        console.log('Admin user already exists.');
-        return;
-    }
-
-    // Hash the admin password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Insert the admin user into the database
-    const insertAdminQuery = `
-        INSERT INTO users (username, password, is_admin) VALUES ($1, $2, $3)
-    `;
-    
-    await db.query(insertAdminQuery, [username, hashedPassword, is_admin])
-        .then(() => {
-            console.log("Admin user created successfully.");
-        })
-        .catch(err => {
-            console.error('Error creating admin user:', err.message);
-        });
-}
 
 
-initDb();
 
 app.use(express.json()); // for parsing application/json
 
 
 
-// Middleware to authenticate JWT token
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    console.log('Authorization Header:', authHeader);
-    const token = authHeader && authHeader.split(' ')[1];
-    console.log('Token:', token);
 
-    if (!token) {
-        console.log('No token provided');
-        return res.sendStatus(401);
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) {
-            console.log('Token verification failed:', err.message);
-            return res.sendStatus(403);
+// User Registration Endpoint (Admin Only)
+app.post(
+    '/api/register',
+    authenticateToken,
+    authorizeAdmin,
+    [
+        body('username').isLength({ min: 3 }).trim().escape(),
+        body('password').isLength({ min: 6 }).trim(),
+        body('role').optional().isIn(['user', 'admin']).trim().escape(),
+    ],
+    async (req, res) => {
+        // Validate input
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
         }
-
-        req.user = user;
-        console.log('Token verified, user:', user);
-        next();
-    });
-}
-
-// Middleware to check if user is an admin
-async function authenticateAdmin(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) return res.sendStatus(401);
-
-    jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
-        if (err) return res.sendStatus(403);
+        
+        const { username, password, role } = req.body;
 
         try {
-            const result = await db.query('SELECT is_admin FROM users WHERE id = $1', [user.id]);
-            const isAdmin = result.rows[0].is_admin;
-
-            if (isAdmin) {
-                req.user = user;
-                next();
-            } else {
-                res.sendStatus(403);
+            // Check if user already exists
+            const existingUser = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+            if (existingUser.rows.length > 0) {
+                return res.status(409).json({ message: 'Username already exists' });
             }
-        } catch (error) {
-            console.error(error);
-            res.sendStatus(500);
+
+            // Hash the password
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            // Insert new user
+            const result = await db.query(
+                'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING username, role',
+                [username, hashedPassword, role || 'user']
+            );
+
+            res.status(201).json({ message: 'User registered successfully', user: result.rows[0] });
+        } catch (err) {
+            console.error('Error registering user:', err.message);
+            res.status(500).json({ message: 'Internal Server Error' });
         }
-    });
-}
-
-
-
-// Admin-only route to create new users
-app.post('/admin/create-user', authenticateAdmin, async (req, res) => {
-    const { username, password, isAdmin } = req.body;
-
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        console.log(hashedPassword)
-        const result = await db.query(
-            'INSERT INTO users (username, password, is_admin) VALUES ($1, $2, $3) RETURNING id',
-            [username, hashedPassword, isAdmin || false]
-        );
-
-        res.status(201).json({ message: 'User created successfully', userId: result.rows[0].id });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to create user' });
     }
-});
+);
+
+
 
 // Function to generate JWT token
 function generateToken(user) {
@@ -268,41 +294,74 @@ function generateToken(user) {
     return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 }
 
-// Function to fetch a user from the database by username
-async function getUserFromDatabase(username) {
-    const query = 'SELECT * FROM users WHERE username = $1';
-    try {
-        const result = await db.query(query, [username]); // Query the database
-        return result.rows[0]; // Return the user object if found
-    } catch (error) {
-        console.error('Error fetching user from database:', error);
-        throw error; // Throw the error to handle it in the route
+
+app.get('/api/profile', (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1]; // Get the token from the Authorization header
+  
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
     }
-}
-
-
-
-
-// Login route to authenticate users
-app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-
-    try {
-        
-        const user = await getUserFromDatabase(username); // Fetch the user from the database
-
-        if (user && await bcrypt.compare(password, user.password)) {
-            const token = generateToken(user); // Generate a JWT token
-            res.json({ token });
-        } else {
-            res.status(401).json({ error: 'Invalid username or password' });
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+        if (err) {
+          return res.status(403).json({ error: 'Failed to authenticate token' });
         }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to login user' });
-    }
+
+        // Directly return the username and role from the token
+        const { username, role } = decoded;
+
+        res.json({
+            username,
+            role,
+        });
+    });
 });
 
+
+// User Login Endpoint
+app.post(
+    '/api/login',
+    [
+        body('username').isLength({ min: 3 }).trim().escape(),
+        body('password').isLength({ min: 6 }).trim(),
+    ],
+    async (req, res) => {
+        // Validate input
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { username, password } = req.body;
+
+        try {
+            // Fetch user from database
+            const userResult = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+            if (userResult.rows.length === 0) {
+                return res.status(401).json({ message: 'Invalid Credentials' });
+            }
+
+            const user = userResult.rows[0];
+
+            // Compare password
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                return res.status(401).json({ message: 'Invalid Credentials' });
+            }
+
+            // Generate JWT
+            const token = jwt.sign(
+                { username: user.username, role: user.role },
+                process.env.JWT_SECRET,
+                { expiresIn: '1h' }
+            );
+
+            res.json({ token });
+        } catch (err) {
+            console.error('Error during login:', err.message);
+            res.status(500).json({ message: 'Internal Server Error' });
+        }
+    }
+);
 
 
 
@@ -1091,4 +1150,24 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+
+// Gracefully handle shutdown on SIGINT or SIGTERM
+const gracefulShutdown = () => {
+    console.log('Shutting down gracefully...');
+    server.close(() => {
+      console.log('Closed out remaining connections');
+      process.exit(0);
+    });
+  
+    // If after 10 seconds, force shutdown
+    setTimeout(() => {
+      console.error('Forcing server shutdown');
+      process.exit(1);
+    }, 10000);
+  };
+  
+  // Listen for termination signals
+  process.on('SIGTERM', gracefulShutdown);
+  process.on('SIGINT', gracefulShutdown);
 

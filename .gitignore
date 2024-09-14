@@ -91,3 +91,4 @@ sorter.py
 db_dump.csv
 
 .env
+._env
