@@ -1,8 +1,11 @@
 const db = require('../config/database');
+const bcrypt = require('bcrypt');
 
 
 // Initialize Database Tables
-function initDb() {
+async function initDb() {
+    const dropUsersTable = `DROP TABLE IF EXISTS users CASCADE;`;
+    
     const createTimeEntriesTable = `
         CREATE TABLE IF NOT EXISTS time_entries (
             id SERIAL PRIMARY KEY,
@@ -26,13 +29,18 @@ function initDb() {
         );
     `;
 
-    db.query(createTimeEntriesTable)
-        .then(() => console.log("Table 'time_entries' created or already exists."))
-        .catch(err => console.error('Error creating time_entries table:', err.message));
+    try {
+        // await db.query(dropUsersTable); // Drop the table if it exists
+        // console.log("Table 'users' dropped.");
 
-    db.query(createUsersTable)
-        .then(() => console.log("Table 'users' created or already exists."))
-        .catch(err => console.error('Error creating users table:', err.message));
+        await db.query(createTimeEntriesTable);
+        console.log("Table 'time_entries' created or already exists.");
+        
+        await db.query(createUsersTable);
+        console.log("Table 'users' created or already exists.");
+    } catch (err) { // Catch any errors and log them to the console
+        console.error('Error creating tables:', err.message);
+    }
 }
 
 

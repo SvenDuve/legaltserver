@@ -39,6 +39,7 @@ const apiLimiter = rateLimit({
 
 
 const app = express();
+app.set('trust proxy', 1 /* number of proxies between user and server */)
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use('/api/', apiLimiter);
@@ -67,10 +68,10 @@ const { body, validationResult } = require('express-validator');
 
 
 initDb();
-seedAdminUser();
+// seedAdminUser();
 checkTimezone();
 
-
+app.get('/ip', (request, response) => response.send(request.ip))
 app.get('/', (req, res) => {
 
     res.send('Hello Sven, Paul, Emma und Mama, spielt ihr heute Doppelkopf?');
