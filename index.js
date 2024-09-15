@@ -7,7 +7,6 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // intialize express app
-const app = express();
 
 // pull routes
 const authRoutes = require('./routes/auth');
@@ -22,7 +21,6 @@ const { initDb, seedAdminUser, checkTimezone } = require('./services/dbaseSetup'
 
 
 
-app.use(helmet());
 
 // Cors options
 const corsOptions = {
@@ -31,8 +29,6 @@ const corsOptions = {
     credentials: true, // Allow credentials if using cookies
 };
 
-app.use(cors(corsOptions));
-
 
 // Rate Limiting to prevent brute-force attacks
 const apiLimiter = rateLimit({
@@ -40,6 +36,11 @@ const apiLimiter = rateLimit({
     max: 100, // Limit each IP to 100 requests per windowMs
     message: 'Too many requests from this IP, please try again after 15 minutes',
 });
+
+
+const app = express();
+app.use(helmet());
+app.use(cors(corsOptions));
 app.use('/api/', apiLimiter);
 app.use(express.json()); // for parsing application/json
 
