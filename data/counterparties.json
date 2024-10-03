@@ -83,6 +83,9 @@
         "value": "Glencore",
         "label": "Glencore"
     },
+    {   "value": "GPK",
+        "label": "GPK"
+    },
     {
         "value": "Gunvor",
         "label": "Gunvor"
@@ -126,10 +129,6 @@
     {
         "value": "MET Deutschland",
         "label": "MET Deutschland"
-    },
-    {
-        "value": "METI",
-        "label": "METI"
     },
     {
         "value": "METI",
