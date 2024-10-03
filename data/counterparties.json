@@ -76,6 +76,10 @@
         "label": "Ezpada"
     },
     {
+        "value": "Gelsenwasser",
+        "label": "Gelsenwasser"
+    },
+    {
         "value": "GEN-I",
         "label": "GEN-I"
     },
@@ -205,6 +209,10 @@
     {
         "value": "SPG",
         "label": "SPG"
+    },
+    {
+        "value": "SPP",
+        "label": "SPP"
     },
     {
         "value": "STX",
